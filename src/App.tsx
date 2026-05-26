@@ -21,6 +21,7 @@ function App() {
   const [userName, setUserName] = useState('')
   const [toast, setToast] = useState<string | null>(null)
   const [loginError, setLoginError] = useState('')
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'recover'>('login')
 
   useEffect(() => {
     if (!toast) return
@@ -56,17 +57,65 @@ function App() {
     setLoginError('Correo no reconocido. Usa una cuenta institucional válida.')
   }
 
+  const handleRegister = (email: string, password: string, confirmPassword: string) => {
+    if (!email.trim() || !password.trim()) {
+      setLoginError('Ingresa correo y contraseña para registrarte.')
+      return
+    }
+    if (password !== confirmPassword) {
+      setLoginError('Las contraseñas no coinciden.')
+      return
+    }
+    if (password.trim().length < 4) {
+      setLoginError('La contraseña debe tener al menos 4 caracteres.')
+      return
+    }
+
+    const normalized = email.toLowerCase()
+    if (!normalized.includes('@') || (!normalized.includes('sena') && !normalized.includes('tecnoparque'))) {
+      setLoginError('Ingresa un correo institucional válido.')
+      return
+    }
+
+    setLoginError('')
+    setToast('Registro completado. Ahora inicia sesión con tus datos.')
+    setAuthMode('login')
+  }
+
+  const handleRecover = (email: string) => {
+    if (!email.trim()) {
+      setLoginError('Ingresa tu correo institucional.')
+      return
+    }
+    if (!email.includes('@')) {
+      setLoginError('Ingresa un correo válido.')
+      return
+    }
+
+    setLoginError('')
+    setToast(`Te enviamos un enlace a ${email}`)
+    setAuthMode('login')
+  }
+
   const handleLogout = () => {
     setRol(null)
     setActivePage('Dashboard')
     setUserName('')
+    setAuthMode('login')
     setToast('Sesión cerrada con éxito')
   }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {rol === null ? (
-        <LoginPage onLogin={handleLogin} error={loginError} />
+        <LoginPage
+          authMode={authMode}
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+          onRecover={handleRecover}
+          onChangeMode={setAuthMode}
+          error={loginError}
+        />
       ) : rol === 'instructor' ? (
         <InstructorView
           userName={userName}
